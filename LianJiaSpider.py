@@ -5,10 +5,8 @@ import random
 from time import sleep
 import pandas as pd
 
-class LianJiaSpider(object):
-    def __init__(self):
-        pass
 
+class LianJiaSpider(object):
     def fetch_url(self, url):
         # Some User Agents
         hds = [
@@ -55,7 +53,7 @@ class XiaoQuSpider(LianJiaSpider):
             for pg in range(2, int(total_page) + 1):
                 rst = self.fetch_url(url + 'pg%d/' % pg)
                 all_ids.extend(self.spilt_xiaoqu_id(rst.text))
-            break
+                break
         return all_ids
 
     def spilt_xiaoqu_id(self, content):
@@ -67,23 +65,33 @@ class XiaoQuSpider(LianJiaSpider):
         pattern_position = re.compile(r'resblock\w+:\'(.*?)\'')
         url_xiaoqu_detail = self.__url_lianjia_xiaoqu + xiaoqu_id + '/'
         content = self.fetch_url(url_xiaoqu_detail).text
-        return pattern_position.findall(content)
+        xiaoqu_detail = pd.DataFrame(pattern_position.findall(content) + [xiaoqu_id]).T
+        return xiaoqu_detail.rename(columns={0: 'gps', 1: 'name', 2: 'XiaoQuId'})
 
     def get_total_pg(self, content):
         pattern_pg = re.compile(r'totalPage":(\d+),')
         total_pg = pattern_pg.findall(content)[0]
         return total_pg
 
-    def get_price_trend(self,xiaoqu_id):
+    def get_price_trend(self, xiaoqu_id):
         url = self.__url_price_trend % xiaoqu_id
         rst = self.fetch_url(url).json()
+        return self.format_json2df(rst)
 
-        return rst
+    def format_json2df(self, rst):
+        this_list = []
+        for k in ['currentLevel', 'upLevel']:
+            for k2 in ['dealPrice', 'quantity', 'listPrice', 'month']:
+                df = pd.DataFrame(rst[k][k2])
+                colums_name = dict(zip(df.columns, list(map(lambda x: k2 + '_' + str(x) if x else k2, df.columns))))
+                this_list.append(df.rename(columns=colums_name))
+        return pd.concat(this_list, axis=1)
+
 
 if __name__ == '__main__':
     xq = XiaoQuSpider()
-    # ids = xq.get_xiaoqu_id()
-    # ids = xq.get_xiaoqu_position('2411048850665')
+    ids = xq.get_xiaoqu_id()
+    pt = xq.get_xiaoqu_position('2411048850665')
     pt = xq.get_price_trend('2411049441058')
-    df = pd.DataFrame(pt)
-    print(df)
+
+    print(ids)
