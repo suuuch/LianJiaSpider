@@ -36,7 +36,7 @@ class LianJiaSpider(object):
         sleep(1)
         print('Start Fetch Url : %s' % url)
         return requests.get(url, headers=random.choice(hds), cookies=cookies)
-
+        
 
 class XiaoQuSpider(LianJiaSpider):
     def __init__(self):
@@ -52,7 +52,7 @@ class XiaoQuSpider(LianJiaSpider):
                                  'guangmingxinqu',
                                  'pingshanqu',
                                  'dapengxinqu']
-        self.__url_price_trend = 'https://sz.lianjia.com/fangjia/priceTrend/c%s'
+        self.__url_price_trend = self.__url_sz_lianjia + 'fangjia/priceTrend/c%s'
         super(XiaoQuSpider, self).__init__()
 
     def get_xiaoqu_id(self):
